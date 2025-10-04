@@ -215,9 +215,9 @@ export default function VoiceCommand({ onVoiceResponse }: VoiceCommandProps) {
           استعمال کی ہدایات:
         </h4>
         <ul className="text-xs text-blue-700 space-y-1" dir="rtl">
-          <li>• "سیلز" کہیں سیلز رپورٹ کے لیے</li>
-          <li>• "پروڈکٹ" کہیں پروڈکٹ لسٹ کے لیے</li>
-          <li>• "بل" کہیں بلنگ کے لیے</li>
+          <li>• &quot;سیلز&quot; کہیں سیلز رپورٹ کے لیے</li>
+          <li>• &quot;پروڈکٹ&quot; کہیں پروڈکٹ لسٹ کے لیے</li>
+          <li>• &quot;بل&quot; کہیں بلنگ کے لیے</li>
         </ul>
       </div>
     </div>
