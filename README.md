@@ -6,6 +6,11 @@ It uses UpliftAI's Speech-to-Text (STT) API to transcribe spoken commands into t
 ## Tech Stack
 
 Backend: FastAPI (Python)
+
 Speech-to-Text: UpliftAI API
+
 Language: Urdu (ur)
+
 Domain: phone-commerce
+
+Frontend: React
