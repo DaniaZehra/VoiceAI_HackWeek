@@ -61,7 +61,7 @@ export default function VoiceCommand({ onVoiceResponse }: VoiceCommandProps) {
       const formData = new FormData();
       formData.append('file', audioBlob, 'recording.wav');
 
-      const response = await fetch('http://localhost:8000/voice-command', {
+      const response = await fetch('https://voiceaihackweek-production.up.railway.app/voice-command', {
         method: 'POST',
         body: formData,
       });
