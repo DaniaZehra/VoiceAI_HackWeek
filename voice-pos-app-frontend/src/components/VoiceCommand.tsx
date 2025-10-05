@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 
 interface VoiceCommandProps {
   onVoiceResponse: (transcription: string, message: string) => void;
@@ -119,8 +120,17 @@ export default function VoiceCommand({ onVoiceResponse }: VoiceCommandProps) {
 
   const isAnyActionInProgress = isRecording || isUploading || isProcessing;
 
+  const pulseVariants = useMemo(() => ({
+    idle: { scale: 1 },
+    recording: { scale: [1, 1.08, 1], boxShadow: [
+      '0 0 0 0 rgba(239,68,68,0.6)',
+      '0 0 0 16px rgba(239,68,68,0)',
+      '0 0 0 0 rgba(239,68,68,0)'
+    ], transition: { duration: 1.4, repeat: Infinity } },
+  }), []);
+
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 animate-fade-in-up">
+    <div className="bg-white rounded-xl shadow-soft-lg p-6 border border-gray-200 animate-fade-in-up">
       <h2 className="text-xl font-bold text-gray-800 mb-6" dir="rtl">
         آواز کمانڈ
       </h2>
@@ -132,22 +142,22 @@ export default function VoiceCommand({ onVoiceResponse }: VoiceCommandProps) {
         </h3>
         
         <div className="flex flex-col items-center space-y-4">
-        <button
+        <motion.button
           onClick={isRecording ? stopRecording : startRecording}
           disabled={isUploading || isProcessing}
+          variants={pulseVariants}
+          animate={isRecording ? 'recording' : 'idle'}
           className={`
-            w-20 h-20 rounded-full flex items-center justify-center text-3xl
+            w-24 h-24 rounded-full flex items-center justify-center text-3xl
             transition-all duration-300 transform hover:scale-105
-            ${isRecording
-              ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
-              : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }
+            ${isRecording ? 'bg-red-500 hover:bg-red-600 text-white' : 'text-white'}
+            ${!isRecording ? 'accent-gradient' : ''}
             ${(isUploading || isProcessing) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-            shadow-lg hover:shadow-xl
+            accent-ring
           `}
         >
           {isRecording ? '⏹️' : '🎙️'}
-        </button>
+        </motion.button>
           
           <p className="text-sm text-gray-600 text-center" dir="rtl">
             {isRecording ? 'ریکارڈنگ جاری ہے... کلک کرکے روکیں' : 'ریکارڈنگ شروع کرنے کے لیے کلک کریں'}
@@ -158,7 +168,7 @@ export default function VoiceCommand({ onVoiceResponse }: VoiceCommandProps) {
       {/* Divider */}
       <div className="border-t border-gray-200 my-6">
         <div className="text-center -mt-3">
-          <span className="bg-white px-4 text-gray-500 text-sm">یا</span>
+          <span className="bg-white px-4 text-gray-500 text-sm rounded-full">یا</span>
         </div>
       </div>
 
@@ -182,8 +192,8 @@ export default function VoiceCommand({ onVoiceResponse }: VoiceCommandProps) {
             onClick={() => fileInputRef.current?.click()}
             disabled={isAnyActionInProgress}
             className={`
-              w-full py-3 px-4 rounded-lg border-2 border-dashed border-gray-300
-              hover:border-blue-400 hover:bg-blue-50 transition-all duration-300
+              w-full py-3 px-4 rounded-lg border-2 border-dashed border-gray-300 glass
+              hover:border-blue-400 hover:bg-blue-50/40 transition-all duration-300
               flex items-center justify-center space-x-2
               ${isAnyActionInProgress ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
             `}
@@ -202,8 +212,11 @@ export default function VoiceCommand({ onVoiceResponse }: VoiceCommandProps) {
 
       {/* Loading Spinner */}
       {isProcessing && (
-        <div className="mt-6 flex items-center justify-center space-x-2">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+        <div className="mt-6 flex items-center justify-center space-x-3">
+          <span className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+          </span>
           <span className="text-sm text-gray-600" dir="rtl">
             ٹرانسکرپشن ہو رہا ہے...
           </span>

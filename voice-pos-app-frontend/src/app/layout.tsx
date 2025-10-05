@@ -19,10 +19,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ur" dir="rtl">
-      <body
-        className={`${inter.variable} font-sans antialiased`}
-      >
-        {children}
+      <body className={`${inter.variable} font-sans antialiased`}>
+        <div className="relative min-h-screen overflow-x-hidden">
+          {/* Animated background */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(120deg,#eef2ff_0%,#f5f7ff_50%,#eefdf3_100%)] opacity-70"
+          />
+
+          {/* Content container */}
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+            {children}
+          </div>
+        </div>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import VoiceCommand from '@/components/VoiceCommand';
 import Dashboard from '@/components/Dashboard';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Transaction {
   id: number;
@@ -31,21 +32,38 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100" dir="ltr">
+    <AnimatePresence mode="wait">
+      <motion.div
+        key="home"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -12 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="min-h-screen"
+        dir="ltr"
+      >
       {/* Navbar */}
-      <nav className="bg-white shadow-lg border-b border-gray-200">
+      <nav className="bg-white rounded-xl shadow-soft-lg mt-2 border border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-gray-800">
-                  Hisaab Kitaab
-                </h1>
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg accent-gradient" />
+                  <h1 className="text-2xl font-bold text-gray-800">
+                    Hisaab Kitaab
+                  </h1>
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-600" dir="rtl">
+            <div className="flex items-center gap-3"> 
+              <div className="text-sm text-gray-800" dir="rtl">
               آواز سے کنٹرول کریں
+              </div>
+              <div className="hidden sm:block">
+                <span className="inline-flex items-center rounded-lg px-3 py-1 text-sm text-white accent-gradient shadow-glow">
+                  POS
+                </span>
               </div>
             </div>
           </div>
@@ -57,16 +75,20 @@ export default function Home() {
         <div className="space-y-8">
           {/* Dashboard Section */}
           <div className="w-full">
-            <Dashboard />
+            <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
+              <Dashboard />
+            </motion.div>
           </div>
 
           {/* Voice Command Section */}
           <div className="w-full">
-            <VoiceCommand onVoiceResponse={handleVoiceResponse} />
+            <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.05 }}>
+              <VoiceCommand onVoiceResponse={handleVoiceResponse} />
+            </motion.div>
             
             {/* Transcription Display */}
             {(transcription || response) && (
-              <div className="mt-6 bg-white rounded-xl shadow-lg p-6 border border-gray-200 animate-fade-in-up">
+              <div className="mt-6 glass gradient-border rounded-xl shadow-soft-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4" dir="rtl">
                   ہساب کتاب کا جواب
                 </h3>
@@ -76,7 +98,7 @@ export default function Home() {
                     <h4 className="text-sm font-medium text-gray-600 mb-2" dir="rtl">
                       ٹرانسکرپشن:
                     </h4>
-                    <p className="text-gray-800 bg-gray-50 p-3 rounded-lg border" dir="rtl">
+                    <p className="text-gray-800 bg-white/60 p-3 rounded-lg border" dir="rtl">
                       {transcription}
                     </p>
                   </div>
@@ -90,21 +112,21 @@ export default function Home() {
 
     {/* If it's a string, just show it */}
     {typeof response === "string" ? (
-      <p className="text-gray-800 bg-blue-50 p-3 rounded-lg border border-blue-200" dir="rtl">
+      <p className="text-gray-800 bg-blue-50/70 p-3 rounded-lg border border-blue-200" dir="rtl">
         {response}
       </p>
     ) : (
       response && (
-        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="p-4 bg-blue-50/70 rounded-lg border border-blue-200">
           {/* Date and summary */}
-          <div className="bg-white shadow rounded-lg p-4 border mb-4" dir="rtl">
+          <div className="bg-white/80 shadow rounded-lg p-4 border mb-4" dir="rtl">
             <p className="text-sm text-blue-700"><strong>تاریخ:</strong> {response.date}</p>
             <p className="text-sm text-blue-700"><strong>کل لین دین:</strong> {response.total_transactions}</p>
             <p className="text-sm text-blue-700"><strong>کل فروخت:</strong> {response.total_sales}</p>
           </div>
 
           {/* Payment breakdown */}
-          <div className="bg-white shadow rounded-lg p-4 border mb-4" dir="rtl">
+          <div className="bg-white/80 shadow rounded-lg p-4 border mb-4" dir="rtl">
             <h5 className="text-sm font-semibold text-blue-800 mb-2">ادائیگی کی تفصیل:</h5>
             <ul className="text-xs text-blue-700 space-y-1 list-disc pr-5">
               {Object.entries(response.payment_breakdown).map(([method, amount]) => (
@@ -116,7 +138,7 @@ export default function Home() {
           </div>
 
           {/* Transactions */}
-          <div className="bg-white shadow rounded-lg p-4 border" dir="rtl">
+          <div className="bg-white/80 shadow rounded-lg p-4 border" dir="rtl">
             <h5 className="text-sm font-semibold text-blue-800 mb-2">لین دین کی فہرست:</h5>
             <table className="w-full border-collapse text-xs text-blue-700">
               <thead>
@@ -152,6 +174,7 @@ export default function Home() {
           </div>
         </div>
       </main>
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
