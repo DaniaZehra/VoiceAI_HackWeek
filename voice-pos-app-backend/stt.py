@@ -108,6 +108,9 @@ URDU_NUM_MAP = {
 }
 
 def parse_urdu_number(text: str) -> float:
+    numbers = re.findall(r'\d+', text)
+    if numbers:
+        return float(numbers[0])
     units = URDU_NUM_MAP
     multipliers = {"ہزار": 1000, "لاکھ": 100000}
     words = text.split()
@@ -306,6 +309,8 @@ async def voice_command(file: UploadFile = File(...), db: Session = Depends(get_
     elif _is_stock_query(text):
         ok, msg, inv = _fetch_inventory(product)
         message = "اسٹاک کی معلومات" if ok else msg
+
+
     # Billing & Sales Commands
     elif "خریداری" in text or "سیلز" in text:
         message = generate_daily_sales_report(db)
