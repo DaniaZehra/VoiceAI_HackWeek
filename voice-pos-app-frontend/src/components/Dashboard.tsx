@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FaChartBar, FaBoxOpen, FaReceipt, FaBoxes } from 'react-icons/fa';
+// import { FaChartBar, FaBoxOpen, FaReceipt, FaBoxes } from 'react-icons/fa';
 import { ReactNode } from 'react';
 
 interface DashboardCardProps {
