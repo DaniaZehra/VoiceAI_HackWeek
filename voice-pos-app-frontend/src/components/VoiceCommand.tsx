@@ -7,6 +7,7 @@ interface VoiceCommandProps {
 }
 
 export default function VoiceCommand({ onVoiceResponse }: VoiceCommandProps) {
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://voiceaihackweek-production.up.railway.app';
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -61,7 +62,7 @@ export default function VoiceCommand({ onVoiceResponse }: VoiceCommandProps) {
       const formData = new FormData();
       formData.append('file', audioBlob, 'recording.wav');
 
-      const response = await fetch('https://voiceaihackweek-production.up.railway.app/voice-command', {
+      const response = await fetch(`${API_BASE}/voice-command`, {
         method: 'POST',
         body: formData,
       });
@@ -93,7 +94,7 @@ export default function VoiceCommand({ onVoiceResponse }: VoiceCommandProps) {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('https://voiceaihackweek-production.up.railway.app/voice-command', {
+      const response = await fetch(`${API_BASE}/voice-command`, {
         method: 'POST',
         body: formData,
       });

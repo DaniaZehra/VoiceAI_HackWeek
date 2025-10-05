@@ -3,13 +3,14 @@ import requests
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import db.models as models
-from db.database import SessionLocal, engine
+from db.database import SessionLocal, engine, DATABASE_URL
 from datetime import date
 from decimal import Decimal
 import uuid
 import os
 import re
 from typing import Optional, Union
+from sqlalchemy import func as sa_func
 try:
     import psycopg
 except Exception:
@@ -33,17 +34,31 @@ app = FastAPI()
 from sqlalchemy import text
 
 @app.get("/test-db")
-def test_db(db: Session = Depends(get_db)):
+def test_db():
     try:
-        return {"message": "Database connected"}
+        import psycopg
+        conn = psycopg.connect(DATABASE_URL)
+        cur = conn.cursor()
+        cur.execute("SELECT NOW();")
+        now = cur.fetchone()[0]
+        return {"message": "Connected successfully", "time": str(now)}
     except Exception as e:
-        return {"message": "Database connection not available", "error": str(e)}
+        return {"message": "Connection failed", "error": str(e)}
+
+@app.get("/healthz")
+def healthz():
+    try:
+        import psycopg
+        with psycopg.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1;")
+                one = cur.fetchone()[0]
+        return {"ok": True, "db": True, "select1": one}
+    except Exception as e:
+        return {"ok": False, "db": False, "error": str(e)}
 
 API_URL = "https://api.upliftai.org/v1/transcribe/speech-to-text"
 API_KEY = "sk_api_e96abf4d0ddb84d1f142b22fb37cccee645cda84c7c4a5d9b509671d5ee67273"
-
-DATABASE_URL = "postgresql://postgres:tILHebFZFIqqlZcxmsFMgcxMcsRkTZfj@yamanote.proxy.rlwy.net:46383/railway?sslmode=require"
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -161,23 +176,9 @@ def generate_daily_sales_report(db: Session):
     return report
 
 # -------------------
-# Inventory Helpers (psycopg)
+# Inventory Helpers (SQLAlchemy)
 # -------------------
-def _connect_db():
-    try:
-        conn = psycopg.connect(
-            host="yamanote.proxy.rlwy.net",
-            port="46383",
-            dbname="railway",
-            user="postgres",
-            password="tILHebFZFIqqlZcxmsFMgcxMcsRkTZfj",
-            sslmode="require"
-        )
-        print("psycopg connected (inside function)")
-        return conn
-    except Exception as e:
-        print("psycopg failed inside function:", e)
-        return None
+import os
 
 def _parse_quantity(text: str) -> int:
     m = re.search(r"(\d{1,4})", text)
@@ -214,70 +215,49 @@ def _is_stock_query(text: str) -> bool:
     patterns = ["اسٹاک کیا", "اسٹاک لیول", "کتنا اسٹاک", "تمام اسٹاک", "inventory", "دکھاؤ", "بتاؤ"]
     return any(p in text for p in patterns)
 
-def _update_inventory(product_name: str, delta: int):
-    conn = _connect_db()
-    if conn is None:
-        return False, "ڈیٹا بیس کنکشن دستیاب نہیں۔", None
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    UPDATE inventory
-                    SET stock_level = stock_level + %s, updated_at = NOW()
-                    WHERE lower(product_name) = lower(%s)
-                    RETURNING stock_level;
-                    """,
-                    (delta, product_name),
-                )
-                row = cur.fetchone()
-                if not row:
-                    return False, "پروڈکٹ نہیں ملی۔", None
-                return True, "OK", row[0]
-    except Exception as e:
-        return False, f"خرابی: {e}", None
-    finally:
-        conn.close()
+def _update_inventory(db: Session, product_name: str, delta: int):
+    item = (
+        db.query(models.Inventory)
+        .filter(sa_func.lower(models.Inventory.product_name) == sa_func.lower(product_name))
+        .one_or_none()
+    )
+    if not item:
+        return False, "پروڈکٹ نہیں ملی۔", None
+    item.stock_level = (item.stock_level or 0) + int(delta)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return True, "OK", item.stock_level
 
-def _fetch_inventory(product_name: str | None = None):
-    conn = _connect_db()
-    if conn is None:
-        return False, "ڈیٹا بیس کنکشن دستیاب نہیں۔", None
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                if product_name:
-                    cur.execute(
-                        "SELECT id, product_name, stock_level, updated_at FROM inventory WHERE lower(product_name)=lower(%s)",
-                        (product_name,)
-                    )
-                    row = cur.fetchone()
-                    if not row:
-                        return True, "پروڈکٹ نہیں ملی۔", None
-                    return True, "OK", {
-                        "id": str(row[0]),
-                        "product_name": row[1],
-                        "stock_level": row[2],
-                        "updated_at": row[3].isoformat() if row[3] else None,
-                    }
-                else:
-                    cur.execute(
-                        "SELECT id, product_name, stock_level, updated_at FROM inventory ORDER BY product_name"
-                    )
-                    rows = cur.fetchall()
-                    return True, "OK", [
-                        {
-                            "id": str(r[0]),
-                            "product_name": r[1],
-                            "stock_level": r[2],
-                            "updated_at": r[3].isoformat() if r[3] else None,
-                        }
-                        for r in rows
-                    ]
-    except Exception as e:
-        return False, f"خرابی: {e}", None
-    finally:
-        conn.close()
+def _fetch_inventory(db: Session, product_name: str | None = None):
+    if product_name:
+        item = (
+            db.query(models.Inventory)
+            .filter(sa_func.lower(models.Inventory.product_name) == sa_func.lower(product_name))
+            .one_or_none()
+        )
+        if not item:
+            return True, "پروڈکٹ نہیں ملی۔", None
+        return True, "OK", {
+            "id": str(item.id),
+            "product_name": item.product_name,
+            "stock_level": item.stock_level,
+            "updated_at": safe_value(item.updated_at),
+        }
+    items = (
+        db.query(models.Inventory)
+        .order_by(models.Inventory.product_name)
+        .all()
+    )
+    return True, "OK", [
+        {
+            "id": str(i.id),
+            "product_name": i.product_name,
+            "stock_level": i.stock_level,
+            "updated_at": safe_value(i.updated_at),
+        }
+        for i in items
+    ]
 
 # -------------------
 # Voice Command API
@@ -299,15 +279,15 @@ async def voice_command(file: UploadFile = File(...), db: Session = Depends(get_
 
     # Inventory Commands
     if product and _should_decrease(text):
-        ok, msg, level = _update_inventory(product, -qty)
+        ok, msg, level = _update_inventory(db, product, -qty)
         new_stock_level = level
         message = f"{product} کا اسٹاک {qty} کم کر دیا گیا۔ نیا اسٹاک: {level}" if ok else msg
     elif product and _should_increase(text):
-        ok, msg, level = _update_inventory(product, qty)
+        ok, msg, level = _update_inventory(db, product, qty)
         new_stock_level = level
         message = f"{product} کا اسٹاک {qty} بڑھا دیا گیا۔ نیا اسٹاک: {level}" if ok else msg
     elif _is_stock_query(text):
-        ok, msg, inv = _fetch_inventory(product)
+        ok, msg, inv = _fetch_inventory(db, product)
         message = "اسٹاک کی معلومات" if ok else msg
 
 
@@ -350,16 +330,16 @@ async def voice_command(file: UploadFile = File(...), db: Session = Depends(get_
 # Inventory Endpoints
 # -------------------
 @app.get("/inventory")
-async def get_inventory_all():
-    ok, msg, items = _fetch_inventory(None)
+async def get_inventory_all(db: Session = Depends(get_db)):
+    ok, msg, items = _fetch_inventory(db, None)
     if not ok:
         raise HTTPException(status_code=500, detail=msg)
     return {"items": items}
 
 @app.get("/inventory/{product}")
-async def get_inventory_product(product: str):
+async def get_inventory_product(product: str, db: Session = Depends(get_db)):
     mapped = URDU_PRODUCT_MAP.get(product, product)
-    ok, msg, item = _fetch_inventory(mapped)
+    ok, msg, item = _fetch_inventory(db, mapped)
     if not ok:
         raise HTTPException(status_code=500, detail=msg)
     if item is None:
