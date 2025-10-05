@@ -91,14 +91,6 @@ export default function Dashboard() {
           icon={<FaChartBar />}
           onClick={() => handleCardClick('Sales Report')}
         />
-        
-        <DashboardCard
-          title="پروڈکٹس"
-          subtitle="پروڈکٹ کی فہرست اور انوینٹری"
-          icon={<FaBoxOpen />}
-          onClick={() => handleCardClick('Products')}
-        />
-        
         <DashboardCard
           title="بلنگ"
           subtitle="نئے بل بنائیں اور پرانے دیکھیں"
