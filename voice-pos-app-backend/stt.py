@@ -1,14 +1,13 @@
-from fastapi import FastAPI, File, UploadFile, Depends
+from fastapi import FastAPI, File, UploadFile, Depends, Query, HTTPException
+import uvicorn
 import requests
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import db.models as models
 from db.database import SessionLocal, engine
 from datetime import date
-from fastapi.responses import JSONResponse
 from decimal import Decimal
 import uuid
-import json
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -123,7 +122,40 @@ async def voice_command(file: UploadFile = File(...), db: Session = Depends(get_
                 total += current
                 current = 0
         return float(total + current)
-    
+    message = ""
+    # Inventory commands handling
+
+    if "انفینٹری" in text or "اسٹاک" in text or "موجودہ سامان" in text:
+        inventory_items = db.query(models.Inventory).all()
+        if not inventory_items:
+            message = "انفینٹری میں کوئی آئٹم موجود نہیں ہے۔"
+        else:
+            lines = []
+            for item in inventory_items:
+                lines.append(f'{item.product_name} کی مقدار: {item.stock_level}')
+            message = "موجودہ انفینٹری:\n" + "\n".join(lines)
+        
+    elif "اسٹاک کم کریں" in text or "اسٹاک اپڈیٹ کریں" in text:
+        products = [item.product_name.lower() for item in db.query(models.Inventory).all()]
+        product_found = None
+        for p in products:
+            if p in text:
+                product_found = p
+                break
+        
+        quantity = parse_urdu_number(text)
+
+        if product_found and quantity > 0:
+            inventory_item = db.query(models.Inventory).filter(models.Inventory.product_name.ilike(product_found)).first()
+            if inventory_item:
+                inventory_item.stock_level = max(0, inventory_item.stock_level - int(quantity))
+                db.commit()
+                message = f"{product_found} کا اسٹاک اب {inventory_item.stock_level} ہے۔"
+            else: 
+                message = f"{product_found} نام کا کوئی پروڈکٹ انفینٹری میں موجود نہیں۔"
+        else:
+            message = "اسٹاک اپڈیٹ کرنے کے لیے درست پروڈکٹ یا مقدار نہیں ملی۔"
+
     # Simulate actions
     if "خریداری" in text:
         message = generate_daily_sales_report(db)
@@ -163,15 +195,31 @@ async def voice_command(file: UploadFile = File(...), db: Session = Depends(get_
         message = f"کمانڈ سمجھ نہیں آئی: {text}"
 
     return {"transcription": text, "message": message}
-    
 
+@app.get("/inventory")
+def get_inventory(db: Session = Depends(get_db)):
+    items = db.query(models.Inventory).all()
+    return [{"product_name": i.product_name, "stock_level": i.stock_level} for i in items]
 
+@app.post("/inventory/update")
+def update_inventory(
+    product_name: str = Query(..., description="Name of the product"),
+    stock_level: int = Query(..., ge=0, description="New stock level"),
+    db: Session = Depends(get_db)
+):
+    item = db.query(models.Inventory).filter(models.Inventory.product_name == product_name).first()
+    if not item:
+        item = models.Inventory(product_name=product_name, stock_level=stock_level)
+        db.add(item)
+    else:
+        item.stock_level = stock_level
 
+    db.commit()
+    return {"message": f"Stock level for '{product_name}' updated to {stock_level}"}
 
 @app.get("/")
 async def root():
     return {"message": "Welcome to the VoiceAI API POS system"}
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

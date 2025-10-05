@@ -15,3 +15,10 @@ class Transaction(Base):
     status = Column(String(20), default="completed")
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+class Inventory(Base):
+    __tablename__ = "inventory"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    product_name = Column(String(255), nullable=False)
+    stock_level = Column(Integer, nullable=False, default=0)
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
