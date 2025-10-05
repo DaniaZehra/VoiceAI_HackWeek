@@ -137,8 +137,8 @@ export default function VoiceCommand({ onVoiceResponse }: VoiceCommandProps) {
           className={`
             w-20 h-20 rounded-full flex items-center justify-center text-3xl
             transition-all duration-300 transform hover:scale-105
-            ${isRecording 
-              ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
+            ${isRecording
+              ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
               : 'bg-blue-500 hover:bg-blue-600 text-white'
             }
             ${(isUploading || isProcessing) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
