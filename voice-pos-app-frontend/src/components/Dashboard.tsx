@@ -90,7 +90,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Dashboard Cards */}
+      {/* Dashboard Cards
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <DashboardCard
           title="سیلز رپورٹ"
@@ -110,7 +110,7 @@ export default function Dashboard() {
           icon={<FaReceipt />}
           onClick={() => handleCardClick('Billing')}
         />
-      </div>
+      </div> */}
 
       {/* Quick Stats */}
       <div className="bg-white rounded-xl shadow-soft-lg p-3 border border-gray-200 animate-fade-in-up">
