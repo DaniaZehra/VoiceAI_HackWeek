@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { FaChartBar, FaBoxOpen, FaReceipt, FaBoxes } from 'react-icons/fa';
+import { ReactNode } from 'react';
 
 interface DashboardCardProps {
   title: string;
   subtitle: string;
-  icon: string;
+  icon: ReactNode;
   onClick: () => void;
 }
 
@@ -40,7 +42,6 @@ export default function Dashboard() {
 
   const handleCardClick = (cardType: string) => {
     console.log(`${cardType} clicked`);
-    // Here you would typically navigate to respective pages or show modals
   };
 
   return (
@@ -87,21 +88,13 @@ export default function Dashboard() {
         <DashboardCard
           title="سیلز رپورٹ"
           subtitle="تفصیلی فروخت کی رپورٹ دیکھیں"
-          icon="📊"
+          icon={<FaChartBar />}
           onClick={() => handleCardClick('Sales Report')}
         />
-        
-        <DashboardCard
-          title="پروڈکٹس"
-          subtitle="پروڈکٹ کی فہرست اور انوینٹری"
-          icon="📦"
-          onClick={() => handleCardClick('Products')}
-        />
-        
         <DashboardCard
           title="بلنگ"
           subtitle="نئے بل بنائیں اور پرانے دیکھیں"
-          icon="🧾"
+          icon={<FaReceipt />}
           onClick={() => handleCardClick('Billing')}
         />
       </div> */}
